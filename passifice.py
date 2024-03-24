@@ -42,6 +42,7 @@ class Password:
         x = Password.power_set(combined)  # make a power set of all words
         total_set = set()
         for subset in x:
+# todo if total len of all above or below - ditch results
             total_len = 0
             for sss in subset:
                 total_len += len(sss)
@@ -55,8 +56,11 @@ class Password:
             total += len(aa)
 
         print_info(total)
-        with open("results.txt", "w") as output:
+        with open("results.txt", "w") as output: # todo name derived by date, etc..
             output.write('\n'.join(sorted(total_set)))
+# todo print_info saved in.. also accept param for output file
+# todo if path doesn't exist then save in default and print_error
+
 
     def _prepare_names(self):
         prepared = set()
