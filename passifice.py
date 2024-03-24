@@ -3,10 +3,9 @@
 #   Ⓒ by https://github.com/flashnuke Ⓒ................................................................................
 #   --------------------------------------------------------------------------------------------------------------------
 # todo names: pass-dict generator, dict-attack passgenerator, etc
-
 import itertools
-import argparse
 
+from typing import Set
 from utils import *
 
 
@@ -19,7 +18,8 @@ class Password:
                  additional_raw: List[str],
                  pass_minlen: int,
                  pass_maxlen: int,
-                 word_separators: str):
+                 word_separators: str,
+                 output_filepath: str):
         self._names_raw = names_raw
         self._dates_raw = dates_raw
         self._numbers_raw = number_raw
@@ -31,48 +31,59 @@ class Password:
 
         self._word_separators = [i for i in word_separators]
         self._word_separators.append('')
-        print_info(f"separators chosed -> '{self._word_separators}'")
 
+        self._output_filepath = output_filepath
+        if os.path.exists(self._output_filepath):
+            print(f"The path '{self._output_filepath}' exists.")
+        else:
+            print(f"The path '{self._output_filepath}' does not exist.")
+
+    def generate_wordlist(self):
         combined = self._prepare_all_dicts()
         print_info("Initial words prepared before proceeding to the wordlist generation:")
         print_info(combined)
+        print_info(f"separators chosen -> {self._word_separators}")
 
-        # todo refactor all below to different method
-        total = 0
-        x = Password.power_set(combined)  # make a power set of all words
+        powerset_combined = Password.power_set(combined)  # make a power set of all words
         total_set = set()
-        for subset in x:
-# todo if total len of all above or below - ditch results
-            total_len = 0
-            for sss in subset:
-                total_len += len(sss)
-            if not self.is_pass_length_valid(total_len):
-                print_info(subset)
+        for subset in powerset_combined:
+            total_subset_len = 0
+            for word in subset:
+                total_subset_len += len(word)
+            if not self._is_pass_length_valid(total_subset_len):
                 continue
-
-            a = '\t'.join(subset)
-            aa = self.generate_variations(a)  # generate variations by using different separators
+            aa = self._generate_variations(list(subset))  # generate variations by using different separators
             total_set |= aa
-            total += len(aa)
 
-        print_info(total)
-        with open("results.txt", "w") as output: # todo name derived by date, etc..
-            output.write('\n'.join(sorted(total_set)))
-# todo print_info saved in.. also accept param for output file
-# todo if path doesn't exist then save in default and print_error
+        self._save_results(total_set)
 
+    def _save_results(self, total_set):
+        print_info(f"saving {len(total_set)} words to {self._output_filepath}...")
+        output = '\n'.join(sorted(total_set))
+        try:
+            self._write_to_file(self._output_filepath, output)
+        except Exception as exc:
+            print_error(f"exception occurred while writing results -> {exc}")
+            if self._output_filepath != DEF_OUTPUT_FILEPATH:
+                print_info(f"attempting to write to default output filepath instead -> {DEF_OUTPUT_FILEPATH}")
+                try:
+                    self._write_to_file(DEF_OUTPUT_FILEPATH, output)
+                except Exception as exc:
+                    print_error(f"unable to save output")
 
-    def _prepare_names(self):
+    @staticmethod
+    def _write_to_file(filepath: str, output):
+        with open(filepath, "w") as f:
+            f.write(output)
+
+    def _prepare_names(self) -> Set[str]:
         prepared = set()
         for name in self._names_raw:
             prepared.add(name.capitalize())
             prepared.add(self.decapitalize_str(name))
         return prepared
 
-    def _prepare_dates(self):
-        # todo dates: if accepted input contains anything other than 0-9 and ., disregard it... also accept only
-        # todo unknown year add: option to "d.m"
-        #
+    def _prepare_dates(self) -> Set[str]:
         prepared = set()
         for date in self._dates_raw:
             print_info(self._dates_raw)
@@ -83,7 +94,7 @@ class Password:
                     year = args[0]
                     prepared.add(year)
                     prepared.add(year[2:])
-                    prepared.add(year[:2])  # todo check if works
+                    prepared.add(year[:2])
 
                 for i in [day, month]:
                     if len(i) == 1:
@@ -93,31 +104,30 @@ class Password:
 
         return prepared
 
-    def _prepare_numbers(self):
-        # todo if contains anything other than numbers, disregard it...
+    def _prepare_numbers(self) -> Set[str]:
         return set(self._numbers_raw)
 
-    def _prepare_locations(self):
+    def _prepare_locations(self) -> Set[str]:
         prepared = set()
         for res in self._locations_raw:
             prepared.add(res.capitalize())
             prepared.add(self.decapitalize_str(res))
         return prepared
 
-    def _prepare_additional(self):
+    def _prepare_additional(self) -> Set[str]:
         prepared = set()
         for word in self._additional_raw:
             prepared.add(word.capitalize())
             prepared.add(self.decapitalize_str(word))
         return prepared
 
-    def _prepare_all_dicts(self):
+    def _prepare_all_dicts(self) -> Set:
         names = self._prepare_names()
         dates = self._prepare_dates()
         numbers = self._prepare_numbers()
         lcoations = self._prepare_locations()
         additional = self._prepare_additional()
-        # todo above methods return the prepared rather than just prepare...
+
         return names | dates | numbers | lcoations | additional
 
     @staticmethod
@@ -131,30 +141,28 @@ class Password:
                 for subset in itertools.combinations(val_set, r)
                 if len(subset) > 0]
 
-    def generate_variations(self, inp: str) -> set:
-        words = inp.split("\t")  # todo \t define as macro somewhere
-        separators = ['', '-', '.', '_']  # todo define separators as var
-        # todo also in separator - add no separator
-
-        sep_combinations = itertools.product(separators, repeat=len(words) - 1)
+    def _generate_variations(self, words: List[str]) -> set:
+        sep_combinations = itertools.product(self._word_separators, repeat=len(words) - 1)
         variations = {''.join([word + sep for word, sep in zip(words, seps)] + [words[-1]])
                       for seps in sep_combinations}
+        return {p_var for p_var in variations if self._is_pass_length_valid(len(p_var))}
 
-        return {p_var for p_var in variations if self.is_pass_length_valid(len(p_var))}
-
-    def is_pass_length_valid(self, password_len: int):
+    def _is_pass_length_valid(self, password_len: int):
         return self._pass_minlen <= password_len <= self._pass_maxlen
 
 
 if __name__ == "__main__":
-    # x = Password(separate_input("bayan bill"),
-    #              separate_input("30.01.1980"),
-    #              separate_input("12"),
-    #              separate_input("georgia"),
-    #              separate_input("narnia"),
-    #              DEF_PASS_LEN_MIN,
-                 # DEF_PASS_LEN_MAX)
-    # exit(0)
+    x = Password(separate_input("bayan bill"),
+                 separate_input("30.01.1980"),
+                 separate_input("12"),
+                 separate_input("georgia"),
+                 separate_input("narnia"),
+                 DEF_PASS_LEN_MIN,
+                 DEF_PASS_LEN_MAX,
+                 "-.",
+                 DEF_OUTPUT_FILEPATH)
+    x.generate_wordlist()
+    exit(0)
 
     printf(f"\n{BANNER}\n"
            f"Make sure of the following:\n"
@@ -162,22 +170,11 @@ if __name__ == "__main__":
            f"2. Write two-letter words as two words (i.e \"new york\")\n"
            f"Written by {BOLD}@flashnuke{RESET}")
     printf(DELIM)
-    # restore_print()
+    # restore_print() # todo is this even needed?
 
-    parser = argparse.ArgumentParser(description='todo')  #
-    parser.add_argument("-m", "--min-len", dest='pass_minlen', type=int, metavar=(""), default=DEF_PASS_LEN_MIN,
-                        help=f"minimum pass length (default -> {DEF_PASS_LEN_MIN})",
-                        required=False)
-    parser.add_argument("-x", "--max-len", dest='pass_maxlen', type=int, metavar=(""), default=DEF_PASS_LEN_MAX,
-                        help=f"maximum pass length (default -> {DEF_PASS_LEN_MAX})",
-                        required=False)
-    parser.add_argument("-s", "--seperators", dest='word_sep', type=str, metavar=(""), default=DEF_WORD_SEPARATORS,
-                        help=f"word separators for password generation (default -> {DEF_WORD_SEPARATORS})",
-                        required=False)
-    # todo argparse = min pass and max pass
-    pargs = parser.parse_args()
+    pargs = define_args()
 
-    # invalidate_print()  # after arg parsing
+    # invalidate_print()  # after arg parsing # todo is this even needed?
     print_info(f"{BOLD}When providing several words, separate them using a whitespace{RESET}")
     names_input = input_validator("Enter meaningful names (i.e: First/Last names, nickname, pet name, etc):")
     dates_input = input_validator("Enter meaningful dates [DAY.MONTH.YEAR] (i.e: 24.02.2002, 31.03, etc):",
@@ -189,13 +186,12 @@ if __name__ == "__main__":
                                     verify_numbers_input)
     locations_input = input_validator("Enter meaningful locations (city of birth, residence, etc):")
     additional_input = input_validator("Enter misc words (any word you think might be of help and did not fit above):")
-    # todo handle extra whitespaces "word word   word word"
-    # todo print separators in init
     printf(names_input)
     printf(pargs.pass_maxlen)
 
     x = Password(names_input, dates_input, numbers_input, locations_input, additional_input, pargs.pass_minlen, pargs.pass_maxlen,
-                 pargs.word_sep)
+                 pargs.word_sep, pargs.output_path)
+    x.generate_wordlist()
 
     # todo info about computation time in readme
     # todo argparser no all lower or no all-upper
