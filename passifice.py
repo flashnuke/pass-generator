@@ -4,8 +4,9 @@
 #   --------------------------------------------------------------------------------------------------------------------
 # todo names: pass-dict generator, dict-attack passgenerator, etc
 import itertools
+import time
 
-from typing import Set
+from typing import Set, Tuple
 from utils import *
 
 
@@ -19,7 +20,11 @@ class Password:
                  pass_minlen: int,
                  pass_maxlen: int,
                  word_separators: str,
-                 output_filepath: str):
+                 output_filepath: str,
+                 min_digits: int,  # todo document minimums... and state default
+                 min_uppers: int,
+                 min_lowers: int,
+                 min_specials: int):
         self._names_raw = names_raw
         self._dates_raw = dates_raw
         self._numbers_raw = number_raw
@@ -38,7 +43,13 @@ class Password:
         else:
             print(f"The path '{self._output_filepath}' does not exist.")
 
+        self._min_digits = min_digits
+        self._min_uppers = min_uppers
+        self._min_lowers = min_lowers
+        self._min_specials = min_specials
+
     def generate_wordlist(self):
+        start_t_sec = int(time.time())
         combined = self._prepare_all_dicts()
         print_info("Initial words prepared before proceeding to the wordlist generation:")
         print_info(combined)
@@ -50,11 +61,13 @@ class Password:
             total_subset_len = 0
             for word in subset:
                 total_subset_len += len(word)
-            if not self._is_pass_length_valid(total_subset_len):
+            if total_subset_len > self._pass_maxlen:
                 continue
             aa = self._generate_variations(list(subset))  # generate variations by using different separators
             total_set |= aa
 
+        finish_t_sec = int(time.time())
+        print_info(f"finished after {finish_t_sec - start_t_sec}[sec]")
         self._save_results(total_set)
 
     def _save_results(self, total_set):
@@ -141,14 +154,26 @@ class Password:
                 for subset in itertools.combinations(val_set, r)
                 if len(subset) > 0]
 
-    def _generate_variations(self, words: List[str]) -> set:
+    def _generate_variations(self, words: List[str]) -> Set[str]:
         sep_combinations = itertools.product(self._word_separators, repeat=len(words) - 1)
         variations = {''.join([word + sep for word, sep in zip(words, seps)] + [words[-1]])
                       for seps in sep_combinations}
-        return {p_var for p_var in variations if self._is_pass_length_valid(len(p_var))}
+        return {p_var for p_var in variations if self._is_pass_valid(p_var)}
 
-    def _is_pass_length_valid(self, password_len: int):
-        return self._pass_minlen <= password_len <= self._pass_maxlen
+    def _is_pass_valid(self, password: str) -> bool:
+        """
+            performs the following checks on the password:
+                * accepted length
+                * minimum digits
+                * minimum upper case letters
+                * minimum lower case letters
+                * minimum special characters
+        """
+        return self._pass_minlen <= len(password) <= self._pass_maxlen \
+            and (sum(c.isdigit() for c in password) >= self._min_digits if self._min_digits > 0 else True) \
+            and (sum(c.isupper() for c in password) >= self._min_uppers if self._min_uppers > 0 else True) \
+            and (sum(c.islower() for c in password) >= self._min_lowers if self._min_lowers > 0 else True) \
+            and (sum(not c.isalnum() for c in password) >= self._min_specials if self._min_specials > 0 else True)
 
 
 if __name__ == "__main__":
@@ -160,7 +185,11 @@ if __name__ == "__main__":
                  DEF_PASS_LEN_MIN,
                  DEF_PASS_LEN_MAX,
                  "-.",
-                 DEF_OUTPUT_FILEPATH)
+                 DEF_OUTPUT_FILEPATH,
+                 DEF_MIN_DIGITS,
+                 DEF_MIN_UPPERS,
+                 DEF_MIN_LOWERS,
+                 DEF_MIN_SPECIALS)
     x.generate_wordlist()
     exit(0)
 
@@ -189,12 +218,15 @@ if __name__ == "__main__":
     printf(names_input)
     printf(pargs.pass_maxlen)
 
-    x = Password(names_input, dates_input, numbers_input, locations_input, additional_input, pargs.pass_minlen, pargs.pass_maxlen,
-                 pargs.word_sep, pargs.output_path)
+    x = Password(names_input, dates_input, numbers_input, locations_input, additional_input, pargs.pass_minlen,
+                 pargs.pass_maxlen,
+                 pargs.word_sep, pargs.output_path, pargs.min_digits, pargs.min_uppwers, pargs.min_lowers,
+                 pargs.min_specials)
     x.generate_wordlist()
 
     # todo info about computation time in readme
     # todo argparser no all lower or no all-upper
+    # todo min lower/upper param
 
 # Names:
 #
