@@ -34,7 +34,8 @@ class PassGenerator:
                  min_digits: int,  # todo document minimums... and state default
                  min_uppers: int,
                  min_lowers: int,
-                 min_specials: int):
+                 min_specials: int,
+                 dont_capitalize: bool):
         self._names_raw = names_raw
         self._dates_raw = dates_raw
         self._numbers_raw = number_raw
@@ -53,6 +54,21 @@ class PassGenerator:
         self._min_uppers = min_uppers
         self._min_lowers = min_lowers
         self._min_specials = min_specials
+
+        self._dont_capitalize = dont_capitalize
+
+        self._print_settings()
+
+    def _print_settings(self):
+        print(DELIM)
+        print_info(f"Password properties")
+        print_empty(f"{self._pass_minlen} <= length <= {self._pass_maxlen}")
+        print_empty(f"amount of digits >= {self._min_digits}")
+        print_empty(f"amount of uppercase characters >= {self._min_uppers}")
+        print_empty(f"amount of lowercase characters >= {self._min_lowers}")
+        print_empty(f"amount of special characters >= {self._min_specials}")
+        print_empty(f"add capitalized/un-capitalized versions of words -> {not self._dont_capitalize}")
+        print(DELIM)
 
     def generate_wordlist(self):
         start_t_sec = int(time.time())
@@ -79,7 +95,7 @@ class PassGenerator:
             finished_pct = int((finished_ctr / len_total_filtered_sets) * 100)
             if finished_pct % 10 == 0 and last_reported_pct != finished_pct:
                 last_reported_pct = finished_pct
-                print_proc(f"Status: generating [{finished_pct}% | {int(time.time()) - start_t_sec} sec], passwords generated so far: {BOLD}{total_passwords_generated}{RESET})")
+                print_proc(f"Status: generating [{finished_pct}% | {int(time.time()) - start_t_sec} sec], passwords generated so far: {BOLD}{total_passwords_generated}{RESET}")
 
         finish_t_sec = int(time.time())
         print_info(f"Status: finished after {BOLD}{finish_t_sec - start_t_sec}{RESET}[sec]")
@@ -96,6 +112,7 @@ class PassGenerator:
         return filtered
 
     def _save_results(self, total_set):
+        print(DELIM)
         print_proc(f"Saving {BOLD}{len(total_set)}{RESET} words to {BOLD}{os.path.abspath(self._output_filepath)}{RESET}")
         output = '\n'.join(sorted(total_set))
         try:
@@ -117,8 +134,11 @@ class PassGenerator:
     def _prepare_names(self) -> Set[str]:
         prepared = set()
         for name in self._names_raw:
-            prepared.add(name.capitalize())
-            prepared.add(self.decapitalize_str(name))
+            if not self._dont_capitalize:
+                prepared.add(name.capitalize())
+                prepared.add(self.decapitalize_str(name))
+            else:
+                prepared.add(name)
         return prepared
 
     def _prepare_dates(self) -> Set[str]:
@@ -213,7 +233,8 @@ if __name__ == "__main__":
         #                   DEF_MIN_DIGITS,
         #                   DEF_MIN_UPPERS,
         #                   DEF_MIN_LOWERS,
-        #                   DEF_MIN_SPECIALS)
+        #                   DEF_MIN_SPECIALS,
+        #                   DEF_NO_CAPITALIZATION)
         # x.generate_wordlist()
         # exit(0)
 
@@ -230,7 +251,7 @@ if __name__ == "__main__":
         names_input = input_validator("Enter meaningful names (i.e: First/Last names, nickname, pet name, etc):")
         dates_input = input_validator("Enter meaningful dates [DAY.MONTH.YEAR] (i.e: 24.02.2002, 31.03, etc):",
                                       "Invalid datetime format. Please use the following format:"
-                                      " \"%d.%m\" or \"%d.%m.%Y\"",
+                                      f" {BOLD}\"%d.%m\"{RESET} or {BOLD}\"%d.%m.%Y\"{RESET}",
                                       verify_dates_input)
         numbers_input = input_validator("Enter meaningful numbers (from username, current year, etc):",
                                         "Invalid number format. Please enter digits only or nothing",
@@ -241,7 +262,7 @@ if __name__ == "__main__":
         x = PassGenerator(names_input, dates_input, numbers_input, locations_input, additional_input, pargs.pass_minlen,
                           pargs.pass_maxlen,
                           pargs.word_sep, pargs.output_path, pargs.min_digits, pargs.min_uppers, pargs.min_lowers,
-                          pargs.min_specials)
+                          pargs.min_specials, pargs.no_capitalization)
         x.generate_wordlist()
 
         # todo info about computation time in readme
@@ -250,3 +271,5 @@ if __name__ == "__main__":
         print_error("Aborted by user (CTRL+C)")
     except Exception as exc:
         print_error(f"{exc} exception occurred: {traceback.format_exc()}")
+    finally:
+        exit()

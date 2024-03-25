@@ -12,6 +12,7 @@ RED = '\033[31m'
 GREEN = '\033[32m'
 YELLOW = "\033[1;33m"
 BLUE = '\033[34m'
+BRIGHT_BLUE = '\033[94m'
 
 
 def print_error(text):
@@ -19,15 +20,22 @@ def print_error(text):
 
 
 def print_info(text, end="\n"):
-    print(f"[{BOLD}{BLUE}*{RESET}] {text}", end=end)
+    print(f"[{BOLD}{YELLOW}*{RESET}] {text}", end=end)
 
 
 def print_input(text):
-    return input(f"[{BOLD}{GREEN}>{RESET}] {text} ")
+    user_input = input(f"[{BOLD}{BLUE}>{RESET}] {text} {BRIGHT_BLUE}")
+    sys.stdout.write(RESET)
+    sys.stdout.flush()
+    return user_input
 
 
 def print_proc(text):
     print(f"[{BOLD}{GREEN}>{RESET}] {text}")
+
+
+def print_empty(text):
+    print(f"    {text}")
 
 
 BANNER = f"""
