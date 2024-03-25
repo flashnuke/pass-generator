@@ -217,17 +217,15 @@ if __name__ == "__main__":
         # x.generate_wordlist()
         # exit(0)
 
-        printf(f"\n{BANNER}\n"
-               f"Make sure of the following:\n"
-               f"1. Disregard capital letters (at the beginning of words)\n"  # todo at the vs in the
-               f"2. Write two-letter words as two words (i.e \"new york\")\n"
-               f"Written by {BOLD}@flashnuke{RESET}")
-        printf(DELIM)
-        # restore_print() # todo is this even needed?
+        print(f"\n{BANNER}\n"
+              f"Make sure of the following:\n"
+              f"1. Disregard capital letters (at the beginning of words)\n"  # todo at the vs in the
+              f"2. Write two-letter words as two words (i.e \"new york\")\n"
+              f"Written by {BOLD}@flashnuke{RESET}")
+        print(DELIM)
 
         pargs = define_args()
 
-        # invalidate_print()  # after arg parsing # todo is this even needed?
         print_info(f"{BOLD}When providing several words, separate them using a whitespace{RESET}")
         names_input = input_validator("Enter meaningful names (i.e: First/Last names, nickname, pet name, etc):")
         dates_input = input_validator("Enter meaningful dates [DAY.MONTH.YEAR] (i.e: 24.02.2002, 31.03, etc):",
@@ -239,8 +237,6 @@ if __name__ == "__main__":
                                         verify_numbers_input)
         locations_input = input_validator("Enter meaningful locations (city of birth, residence, etc):")
         additional_input = input_validator("Enter misc words (any word you think might be of help and did not fit above):")
-        printf(names_input)
-        printf(pargs.pass_maxlen)
 
         x = PassGenerator(names_input, dates_input, numbers_input, locations_input, additional_input, pargs.pass_minlen,
                           pargs.pass_maxlen,
