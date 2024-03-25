@@ -13,7 +13,8 @@ DEF_OUTPUT_FILEPATH = "./results.txt"
 
 
 def define_args():
-    parser = argparse.ArgumentParser(description='todo')  # todo
+    parser = argparse.ArgumentParser(description='A program designed to generate a password list'
+                                                 ' (for dictionary-attacks) using words provided by the user')
     parser.add_argument("-m", "--min-len", dest='pass_minlen', type=int, metavar=(""), default=DEF_PASS_LEN_MIN,
                         help=f"minimum pass length (default -> {DEF_PASS_LEN_MIN})",
                         required=False)
@@ -35,7 +36,7 @@ def define_args():
     parser.add_argument("-s", "--seperators", dest='word_sep', type=str, metavar=(""), default=DEF_WORD_SEPARATORS,
                         help=f"word separators for password generation (default -> {DEF_WORD_SEPARATORS})",
                         required=False)
-    parser.add_argument("-o", "--output", dest='output_path', type=str, metavar=(""), default=DEF_WORD_SEPARATORS,
+    parser.add_argument("-o", "--output", dest='output_path', type=str, metavar=(""), default=DEF_OUTPUT_FILEPATH,
                         help=f"output filepath where wordlist will be saved (default -> {DEF_OUTPUT_FILEPATH})",
                         required=False)
 

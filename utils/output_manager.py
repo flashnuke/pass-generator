@@ -47,9 +47,15 @@ def print_input(text):
     return input(printf(f"[{BOLD}{GREEN}>{RESET}] {text} "))
 
 
-def print_cmd(text):
+def print_proc(text):
     printf(f"[{BOLD}{GREEN}>{RESET}] {text}")
 
 
 BANNER = f"""
-asdasd"""
+{BOLD}{RED} _____{RESET}            {BOLD}{RED} _____{RESET}                           _             
+{BOLD}{RED}| ___ \{RESET}           {BOLD}{RED}|  __ \{RESET}                         | |            
+{BOLD}{RED}| |_/ /{RESET}_ _ ___ ___{BOLD}{RED}| |  \/{RESET} ___ _ __   ___ _ __ ____| |_ ___  ____ 
+{BOLD}{RED}|  __/{RESET} _  / __/ __{BOLD}{RED}| | __ {RESET}/ _ \\ |_ \ / _ \\  __/ _  | __/ _ \|  __|
+{BOLD}{RED}| |{RESET} | (_| \__ \__ {BOLD}{RED}\\ |_\\ \{RESET}  __/ | | |  __/ | | (_| | || (_) | |   
+{BOLD}{RED}\_|{RESET}  \____|___/___/{BOLD}{RED}\____/{RESET}\___|_| |_|\___|_|  \__,_|\__\___/|_|   
+"""
