@@ -45,7 +45,7 @@ class PassGenerator:
         self._pass_minlen = pass_minlen
         self._pass_maxlen = pass_maxlen
 
-        self._word_separators = [i for i in word_separators]
+        self._word_separators = list(word_separators)
         self._word_separators.append('')
 
         self._output_filepath = output_filepath
@@ -102,7 +102,7 @@ class PassGenerator:
         self._save_results(total_set)
 
     def _filter_by_size(self, power_set: List[Set[str]]) -> List[Set[str]]:
-        filtered: List[Set[str]] = list()
+        filtered: List[Set[str]] = []
         for subset in power_set:
             total_subset_len = 0
             for word in subset:
@@ -178,13 +178,13 @@ class PassGenerator:
         return prepared
 
     def _prepare_all_dicts(self) -> Set:
-        names = self._prepare_names()
-        dates = self._prepare_dates()
-        numbers = self._prepare_numbers()
-        lcoations = self._prepare_locations()
-        additional = self._prepare_additional()
-
-        return names | dates | numbers | lcoations | additional
+        return set().union(
+        self._prepare_names(),
+        self._prepare_dates(),
+        self._prepare_numbers(),
+        self._prepare_locations(),
+        self._prepare_additional()
+        )
 
     @staticmethod
     def decapitalize_str(word: str) -> str:
@@ -212,11 +212,13 @@ class PassGenerator:
                 * minimum lower case letters
                 * minimum special characters
         """
-        return self._pass_minlen <= len(password) <= self._pass_maxlen \
-            and (sum(c.isdigit() for c in password) >= self._min_digits if self._min_digits > 0 else True) \
-            and (sum(c.isupper() for c in password) >= self._min_uppers if self._min_uppers > 0 else True) \
-            and (sum(c.islower() for c in password) >= self._min_lowers if self._min_lowers > 0 else True) \
-            and (sum(not c.isalnum() for c in password) >= self._min_specials if self._min_specials > 0 else True)
+        return (
+            self._pass_minlen <= len(password) <= self._pass_maxlen
+            and sum(c.isdigit() for c in password) >= self._min_digits
+            and sum(c.isupper() for c in password) >= self._min_uppers
+            and sum(c.islower() for c in password) >= self._min_lowers
+            and sum(not c.isalnum() for c in password) >= self._min_specials
+        )
 
 
 if __name__ == "__main__":
